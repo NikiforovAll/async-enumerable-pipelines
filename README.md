@@ -38,3 +38,8 @@ dotnet example --list
 ## Demo: TextSummarizationAndAggregationPipeline
 
 <video src="https://github.com/user-attachments/assets/42c6eb97-7a11-4b89-857e-1ffb8e70073c" controls="controls"></video>
+
+## References
+- <https://learn.microsoft.com/en-us/archive/msdn-magazine/2019/november/csharp-iterating-with-async-enumerables-in-csharp-8>
+- <https://github.com/dotnet/reactive>
+- <https://github.com/microsoft/semantic-kernel/tree/main/dotnet/notebooks>
