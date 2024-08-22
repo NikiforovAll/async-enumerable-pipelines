@@ -1,0 +1,18 @@
+Pipelines in C# provide a powerful and efficient way to process data asynchronously in a series of stages. They are particularly useful when dealing with large amounts of data or when performing complex data transformations.
+
+At the core of a pipeline is the concept of a pipeline stage, which represents a discrete unit of work. Each stage can perform a specific operation on the data, such as filtering, transforming, or aggregating. These stages are connected together to form a pipeline, where the output of one stage becomes the input of the next.
+
+One of the key benefits of using pipelines is their ability to process data asynchronously. This means that each stage can operate independently, allowing for parallel processing and improved performance. Additionally, pipelines provide built-in support for backpressure, which ensures that data is processed at a rate that is manageable for the consumer, preventing overload and resource exhaustion.
+
+```csharp
+var input = new List<int> { 1, 2, 3, 4, 5 };
+
+var pipeline = input
+    .Where(x => x % 2 == 0) // Filter even numbers
+    .Select(x => x * 2); // Double each number
+
+foreach (var result in pipeline)
+{
+    Console.WriteLine(result);
+}
+```
