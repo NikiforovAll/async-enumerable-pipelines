@@ -6,7 +6,7 @@ var path = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Data");
 var fileWatcher = CreateFileObservable(path);
 
 var pipeline = fileWatcher
-    .TakeUntil(DateTimeOffset.Now.AddMinutes(1))
+    .TakeUntil(DateTimeOffset.Now.AddSeconds(15))
     .ToAsyncEnumerable()
     .SelectAwait(ReadFile)
     .Where(IsValidFileForProcessing)

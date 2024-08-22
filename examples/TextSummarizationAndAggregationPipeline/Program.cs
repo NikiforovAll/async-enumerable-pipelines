@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Shared;
+using Spectre.Console;
 using static Shared.Steps;
 
-var (kernel, summarizationFunction) = Init();
+var kernel = Init();
 var path = Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Data");
 
 var pipeline = Directory
@@ -15,14 +16,18 @@ var pipeline = Directory
     .SelectAwait(ReadFile)
     .Where(IsValidFileForProcessing)
     .SelectAwait(Summarize)
-    .WriteResultToFile(path: Path.Combine(path, "summaries.txt"))
-    .ForEachAsync(x => Console.WriteLine($"Processed {x.Name}"));
+    .WriteResultToFile(path: Path.Combine(Path.GetTempPath(), "summaries.txt"))
+    .ForEachAsync(x => AnsiConsole.MarkupLine($"Processed [green]{x.Name}[/]"));
 
 await pipeline;
 
-static (Kernel kernel, KernelFunction summarizationFunction) Init()
+static Kernel Init()
 {
-    var builder = Host.CreateApplicationBuilder();
+    var builder = Host.CreateApplicationBuilder(
+        new HostApplicationBuilderSettings { EnvironmentName = Environments.Development }
+    );
+    builder.Services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.None));
+
     var endpoint = builder.Configuration["AZURE_OPENAI_ENDPOINT"]!;
     var deployment = builder.Configuration["AZURE_OPENAI_GPT_NAME"]!;
     var key = builder.Configuration["AZURE_OPENAI_KEY"]!;
@@ -33,21 +38,20 @@ static (Kernel kernel, KernelFunction summarizationFunction) Init()
     var services = builder.Build().Services;
 
     var kernel = services.GetRequiredService<Kernel>();
-    var prompt = """
-        Please summarize the the following text in 20 words or less:
-        ${input}
-        """;
-    var summarizationFunction = kernel.CreateFunctionFromPrompt(prompt);
 
-    return (kernel, summarizationFunction);
+    return kernel;
 }
 
 async ValueTask<SummarizationPayload> Summarize(FilePayload file)
 {
-    var result = await summarizationFunction.InvokeAsync(
-        kernel,
-        new KernelArguments(new OpenAIPromptExecutionSettings() { MaxTokens = 400 }) { ["input"] = file.Content }
-    );
+    var prompt = """
+        {{$input}}
+        Please summarize the content above in 20 words or less:
+
+        The output format should be: [title]: [summary]
+        """;
+
+    var result = await kernel.InvokePromptAsync(prompt, new KernelArguments() { ["input"] = file.Content });
 
     return new(file.Name, result.ToString());
 }
@@ -61,7 +65,7 @@ public static class MyPipelineExtensions
     {
         const int batchSize = 10;
 
-        using var streamWriter = new StreamWriter(path);
+        using var streamWriter = new StreamWriter(path, append: true);
 
         await foreach (var batch in values.Buffer(batchSize))
         {
@@ -72,17 +76,28 @@ public static class MyPipelineExtensions
                 yield return value;
             }
 
-            streamWriter.Flush();
+            await streamWriter.FlushAsync();
         }
+
+        AnsiConsole.MarkupLine($"Results written to [green]{path}[/]");
     }
 
-    public static async IAsyncEnumerable<T> ReportProgress<T>(this IAsyncEnumerable<T> values)
+    public static async IAsyncEnumerable<string> ReportProgress(this IAsyncEnumerable<string> values)
     {
         var totalCount = await values.CountAsync();
 
-        await foreach (var value in values)
+        await foreach (var (value, index) in values.Select((value, index) => (value, index)))
         {
             yield return value;
+
+            AnsiConsole
+                .Progress()
+                .Start(ctx =>
+                {
+                    var task = ctx.AddTask($"Processing - {Path.GetFileName(value)}", true, totalCount);
+                    task.Increment(index + 1);
+                    task.StopTask();
+                });
         }
     }
 }

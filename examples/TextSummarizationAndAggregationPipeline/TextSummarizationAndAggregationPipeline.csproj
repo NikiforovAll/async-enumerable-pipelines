@@ -5,9 +5,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ExampleDescription>Demonstrates how to build custom async-enumerable operators.</ExampleDescription>
+    <ExampleDescription>Demonstrates how to build custom async-enumerable operators</ExampleDescription>
     <ExampleOrder>4</ExampleOrder>
-    <UserSecretsId>3f392587-2601-400b-84a6-b7340d1436ef</UserSecretsId>
+    <UserSecretsId>e789b935-ac65-4262-a2e3-dcca0f6e9cfe</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.17.2" />
+    <PackageReference Include="Spectre.Console" Version="0.49.1" />
   </ItemGroup>
 
 </Project>
